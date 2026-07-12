@@ -75,21 +75,27 @@ async def search_similar(
     """
     client = get_qdrant_client()
 
-    results = client.search(
-        collection_name=settings.qdrant_collection,
-        query_vector=query_vector,
-        limit=limit,
-        score_threshold=score_threshold,
-    )
+    try:
+        results = client.search(
+            collection_name=settings.qdrant_collection,
+            query_vector=query_vector,
+            limit=limit,
+            score_threshold=score_threshold,
+        )
 
-    return [
-        {
-            "id": str(r.id),
-            "score": r.score,
-            "payload": r.payload,
-        }
-        for r in results
-    ]
+        return [
+            {
+                "id": str(r.id),
+                "score": r.score,
+                "payload": r.payload,
+            }
+            for r in results
+        ]
+    except Exception as e:
+        if "Not found" in str(e) or "doesn't exist" in str(e):
+            logger.warning(f"Coleção {settings.qdrant_collection} não existe ainda. Busca vazia.")
+            return []
+        raise e
 
 
 async def delete_by_document_id(document_id: str):
