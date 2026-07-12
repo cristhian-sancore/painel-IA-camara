@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis_cache_ia:6379"
 
     # LLM
-    llm_model: str = "llama3"
+    llm_model: str = "llama3.1"
     embedding_model: str = "nomic-embed-text"
 
     # SuperAdmin
