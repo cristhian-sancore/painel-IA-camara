@@ -273,4 +273,5 @@ async def get_document_file(
         raise HTTPException(status_code=404, detail="Arquivo físico não encontrado")
 
     media_type = "application/pdf" if document.tipo == "pdf" else "application/octet-stream"
-    return FileResponse(document.caminho_arquivo, media_type=media_type, filename=document.nome_original)
+    headers = {"Content-Disposition": f'inline; filename="{document.nome_original}"'}
+    return FileResponse(document.caminho_arquivo, media_type=media_type, headers=headers)

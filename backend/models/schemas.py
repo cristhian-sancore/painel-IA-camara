@@ -118,6 +118,7 @@ class DocumentResponse(BaseModel):
     total_chunks: int
     status: str
     erro_msg: Optional[str]
+    ativo: bool = True
     criado_em: datetime
 
     class Config:
