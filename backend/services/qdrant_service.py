@@ -81,6 +81,14 @@ async def search_similar(
             query_vector=query_vector,
             limit=limit,
             score_threshold=score_threshold,
+            query_filter=qmodels.Filter(
+                must=[
+                    qmodels.FieldCondition(
+                        key="ativo",
+                        match=qmodels.MatchValue(value=True),
+                    )
+                ]
+            ),
         )
 
         return [
@@ -107,6 +115,28 @@ async def delete_by_document_id(document_id: str):
     client.delete(
         collection_name=settings.qdrant_collection,
         points_selector=qmodels.FilterSelector(
+            filter=qmodels.Filter(
+                must=[
+                    qmodels.FieldCondition(
+                        key="document_id",
+                        match=qmodels.MatchValue(value=document_id),
+                    )
+                ]
+            )
+        ),
+    )
+
+
+async def update_document_active_status(document_id: str, ativo: bool):
+    """
+    Atualiza o campo 'ativo' no payload de todos os vetores de um documento.
+    """
+    client = get_qdrant_client()
+    
+    client.set_payload(
+        collection_name=settings.qdrant_collection,
+        payload={"ativo": ativo},
+        points=qmodels.FilterSelector(
             filter=qmodels.Filter(
                 must=[
                     qmodels.FieldCondition(

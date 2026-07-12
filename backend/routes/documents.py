@@ -149,6 +149,7 @@ async def process_document_background(document_id: str, file_path: str, file_typ
                         "conteudo": chunk["conteudo"],
                         "pagina": chunk["pagina"],
                         "chunk_index": chunk["chunk_index"],
+                        "ativo": True,
                     })
 
                     # Salvar chunk no PostgreSQL
@@ -225,8 +226,51 @@ async def delete_document(
     if document.caminho_arquivo and os.path.exists(document.caminho_arquivo):
         os.remove(document.caminho_arquivo)
 
-    # Remover do banco (cascade deleta chunks)
     await db.delete(document)
     await db.commit()
 
     return {"message": "Documento excluído com sucesso"}
+
+
+@router.put("/{document_id}/toggle-active")
+async def toggle_document_active(
+    document_id: str,
+    user: User = Depends(require_permission("documents.manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Ativa ou desativa um documento para ser usado no RAG."""
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+
+    document.ativo = not document.ativo
+    await db.commit()
+
+    # Atualizar vetores no Qdrant para refletir o status
+    try:
+        await qdrant_service.update_document_active_status(document_id, document.ativo)
+    except Exception as e:
+        logger.error(f"Erro ao atualizar status ativo no Qdrant: {e}")
+        # Mesmo com erro, mantém o banco atualizado (o RAG usará filter se possível)
+
+    return {"message": f"Documento {'ativado' if document.ativo else 'desativado'}", "ativo": document.ativo}
+
+
+from fastapi.responses import FileResponse
+
+@router.get("/{document_id}/file")
+async def get_document_file(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retorna o arquivo físico (PDF) para visualização."""
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+
+    if not document or not document.caminho_arquivo or not os.path.exists(document.caminho_arquivo):
+        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado")
+
+    media_type = "application/pdf" if document.tipo == "pdf" else "application/octet-stream"
+    return FileResponse(document.caminho_arquivo, media_type=media_type, filename=document.nome_original)

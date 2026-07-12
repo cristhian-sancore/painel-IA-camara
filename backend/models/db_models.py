@@ -94,6 +94,7 @@ class Document(Base):
     erro_msg = Column(Text, nullable=True)
     upload_por = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
     caminho_arquivo = Column(String(1000), nullable=True)
+    ativo = Column(Boolean, default=True)
     criado_em = Column(DateTime, default=datetime.utcnow)
 
     chunks = relationship("DocumentChunk", back_populates="document", lazy="selectin", cascade="all, delete-orphan")

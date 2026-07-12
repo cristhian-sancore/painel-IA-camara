@@ -15,7 +15,7 @@ from backend.models.db_models import (
 )
 from backend.middleware.auth_middleware import hash_password
 
-from backend.routes import auth, chat, documents, admin, users, groups, settings as settings_routes
+from backend.routes import auth, chat, documents, admin, users, groups, settings as settings_routes, reports
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -138,6 +138,7 @@ app.include_router(admin.router)
 app.include_router(users.router)
 app.include_router(groups.router)
 app.include_router(settings_routes.router)
+app.include_router(reports.router)
 
 
 # Health Check

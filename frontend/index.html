@@ -81,6 +81,10 @@
                     <span class="material-icons-round">description</span>
                     <span class="nav-label">Documentos</span>
                 </a>
+                <a href="#" class="nav-item" data-page="reports" id="nav-reports">
+                    <span class="material-icons-round">analytics</span>
+                    <span class="nav-label">Relatórios</span>
+                </a>
                 <a href="#" class="nav-item" data-page="dashboard" id="nav-dashboard">
                     <span class="material-icons-round">dashboard</span>
                     <span class="nav-label">Dashboard</span>
@@ -134,35 +138,51 @@
                         </div>
                     </div>
 
-                    <!-- Chat Main -->
-                    <div class="chat-main">
-                        <div id="chat-messages" class="chat-messages">
-                            <div class="chat-welcome">
-                                <span class="material-icons-round chat-welcome-icon">auto_awesome</span>
-                                <h2>Olá! Como posso ajudar?</h2>
-                                <p>Faça perguntas sobre os documentos legislativos da câmara.</p>
-                                <div class="chat-suggestions">
-                                    <button class="suggestion-chip" data-question="Quais são as leis municipais mais recentes?">
-                                        📜 Leis recentes
-                                    </button>
-                                    <button class="suggestion-chip" data-question="Qual a lei orgânica do município?">
-                                        📋 Lei Orgânica
-                                    </button>
-                                    <button class="suggestion-chip" data-question="Quais projetos de lei estão em tramitação?">
-                                        📄 Projetos em tramitação
+                    <!-- Chat Split Container -->
+                    <div class="chat-split-container">
+                        <!-- Chat Main -->
+                        <div class="chat-main chat-main-panel">
+                            <div id="chat-messages" class="chat-messages">
+                                <div class="chat-welcome">
+                                    <span class="material-icons-round chat-welcome-icon">auto_awesome</span>
+                                    <h2>Olá! Como posso ajudar?</h2>
+                                    <p>Faça perguntas sobre os documentos legislativos da câmara.</p>
+                                    <div class="chat-suggestions">
+                                        <button class="suggestion-chip" data-question="Quais são as leis municipais mais recentes?">
+                                            📜 Leis recentes
+                                        </button>
+                                        <button class="suggestion-chip" data-question="Qual a lei orgânica do município?">
+                                            📋 Lei Orgânica
+                                        </button>
+                                        <button class="suggestion-chip" data-question="Quais projetos de lei estão em tramitação?">
+                                            📄 Projetos em tramitação
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chat-input-area">
+                                <div class="chat-input-wrapper">
+                                    <textarea id="chat-input" placeholder="Faça uma pergunta sobre os documentos..." rows="1"></textarea>
+                                    <button id="btn-send" class="btn-send" title="Enviar">
+                                        <span class="material-icons-round">send</span>
                                     </button>
                                 </div>
+                                <p class="chat-disclaimer">As respostas são baseadas nos documentos indexados e podem conter imprecisões.</p>
                             </div>
                         </div>
 
-                        <div class="chat-input-area">
-                            <div class="chat-input-wrapper">
-                                <textarea id="chat-input" placeholder="Faça uma pergunta sobre os documentos..." rows="1"></textarea>
-                                <button id="btn-send" class="btn-send" title="Enviar">
-                                    <span class="material-icons-round">send</span>
-                                </button>
+                        <!-- PDF Panel -->
+                        <div class="chat-pdf-panel" id="chat-pdf-panel">
+                            <div class="pdf-viewer-container" style="display:flex; flex-direction:column; height: 100%;">
+                                <div class="pdf-header" style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 1rem; background: var(--card-bg); border-bottom: 1px solid var(--border);">
+                                    <h3 id="pdf-viewer-title" style="margin:0; font-size: 14px; font-weight: 500;">Visualizador de Documento</h3>
+                                    <button class="btn btn-sm btn-outline" onclick="Chat.closePdfViewer()" style="padding: 0.2rem 0.5rem;">
+                                        <span class="material-icons-round" style="font-size: 16px;">close</span>
+                                    </button>
+                                </div>
+                                <iframe id="pdf-viewer-iframe" src="" style="flex:1; width:100%; border:none;"></iframe>
                             </div>
-                            <p class="chat-disclaimer">As respostas são baseadas nos documentos indexados e podem conter imprecisões.</p>
                         </div>
                     </div>
                 </div>
@@ -190,11 +210,10 @@
                             <button class="modal-close">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <div id="drop-zone" class="drop-zone">
+                            <div class="drop-zone" id="drop-zone">
                                 <span class="material-icons-round drop-icon">cloud_upload</span>
-                                <p>Arraste um arquivo ou <strong>clique aqui</strong></p>
-                                <p class="drop-hint">PDF, DOCX ou TXT (máx. 50MB)</p>
-                                <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
+                                <p>Arraste e solte seus PDFs ou DOCX aqui<br>ou clique para selecionar</p>
+                                <input type="file" id="file-input" accept=".pdf,.docx,.txt" multiple hidden>
                             </div>
                             <div id="upload-progress" class="upload-progress hidden">
                                 <div class="progress-bar">
@@ -222,12 +241,13 @@
                                 <th>Chunks</th>
                                 <th>Status</th>
                                 <th>Data</th>
+                                <th>Ativo</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="documents-table-body">
                             <tr class="empty-row">
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="empty-state">
                                         <span class="material-icons-round">folder_open</span>
                                         <p>Nenhum documento indexado</p>
@@ -239,6 +259,75 @@
                 </div>
 
                 <div id="documents-pagination" class="pagination"></div>
+            </section>
+
+            <!-- ===== REPORTS ===== -->
+            <section id="section-reports" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Relatórios Inteligentes</h1>
+                        <p class="section-subtitle">Gere resumos e análises cruzadas de documentos legislativos</p>
+                    </div>
+                </div>
+
+                <div class="reports-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Card: Resumo -->
+                    <div class="report-card glass-card">
+                        <div class="report-header" style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1rem;">
+                            <span class="material-icons-round" style="color:var(--primary); font-size:24px;">summarize</span>
+                            <h3 style="margin:0;">Sumarização de Documento</h3>
+                        </div>
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom: 1rem;">Gere um resumo estruturado de um documento longo, focando em pontos-chave.</p>
+                        
+                        <div class="form-group">
+                            <label>Documento Alvo</label>
+                            <select id="report-summary-doc"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Foco Específico (Opcional)</label>
+                            <input type="text" id="report-summary-focus" placeholder="Ex: Impacto financeiro, Artigo 15, etc.">
+                        </div>
+                        <button id="btn-generate-summary" class="btn btn-primary" style="width: 100%;">
+                            <span class="material-icons-round">summarize</span>
+                            Gerar Sumário
+                        </button>
+                    </div>
+
+                    <!-- Card: Análise Cruzada -->
+                    <div class="report-card glass-card">
+                        <div class="report-header" style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1rem;">
+                            <span class="material-icons-round" style="color:var(--accent); font-size:24px;">compare_arrows</span>
+                            <h3 style="margin:0;">Análise Cruzada</h3>
+                        </div>
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom: 1rem;">Compare múltiplos documentos para identificar divergências e complementos.</p>
+                        
+                        <div class="form-group">
+                            <label>Documentos para Comparar (Ctrl/Cmd + Clique)</label>
+                            <select id="report-cross-docs" multiple style="height: 80px;"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tema da Análise</label>
+                            <input type="text" id="report-cross-topic" placeholder="Ex: Mudanças na regra de aposentadoria" required>
+                        </div>
+                        <button id="btn-generate-cross" class="btn btn-accent" style="width: 100%;">
+                            <span class="material-icons-round">compare_arrows</span>
+                            Gerar Análise
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultado -->
+                <div id="report-result-container" class="glass-card hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <h3 style="margin:0;">Resultado da Análise</h3>
+                        <button class="btn btn-sm btn-outline" onclick="window.print()">
+                            <span class="material-icons-round">print</span> Imprimir
+                        </button>
+                    </div>
+                    <div id="report-result-content" class="report-content" style="line-height: 1.6;">
+                        <!-- Report HTML -->
+                    </div>
+                </div>
             </section>
 
             <!-- ===== DASHBOARD ===== -->
@@ -585,6 +674,7 @@
     <script src="/js/auth.js"></script>
     <script src="/js/chat.js"></script>
     <script src="/js/documents.js"></script>
+    <script src="/js/reports.js"></script>
     <script src="/js/admin.js"></script>
     <script src="/js/users.js"></script>
     <script src="/js/groups.js"></script>

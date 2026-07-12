@@ -255,12 +255,30 @@ const Chat = {
             <div class="message-sources">
                 <div class="message-sources-title">📚 Fontes</div>
                 ${sources.map(s => `
-                    <span class="source-tag" title="${this.escapeHtml(s.trecho || '')}">
+                    <span class="source-tag" title="${this.escapeHtml(s.trecho || '')}" onclick="Chat.openPdfViewer('${s.document_id || s.doc_id || ''}', ${s.pagina || 1})" style="cursor:pointer;">
                         📄 ${this.escapeHtml(s.doc_nome)}${s.pagina ? ` (p.${s.pagina})` : ''} 
                         <small style="opacity:0.7">${Math.round((s.score || 0) * 100)}%</small>
                     </span>
                 `).join('')}
             </div>`;
+    },
+
+    openPdfViewer(docId, page) {
+        if (!docId) {
+            App.toast('ID do documento indisponível na fonte.', 'warning');
+            return;
+        }
+        const panel = document.getElementById('chat-pdf-panel');
+        const iframe = document.getElementById('pdf-viewer-iframe');
+        panel.classList.add('active');
+        iframe.src = `/api/documents/${docId}/file#page=${page}`;
+    },
+
+    closePdfViewer() {
+        const panel = document.getElementById('chat-pdf-panel');
+        const iframe = document.getElementById('pdf-viewer-iframe');
+        panel.classList.remove('active');
+        iframe.src = '';
     },
 
     showTyping() {

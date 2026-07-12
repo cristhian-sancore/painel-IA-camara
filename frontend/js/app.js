@@ -13,6 +13,7 @@ const App = {
         Auth.init();
         Chat.init();
         Documents.init();
+        Reports.init();
         Admin.init();
         Users.init();
         Groups.init();
@@ -137,6 +138,9 @@ const App = {
                 break;
             case 'documents':
                 Documents.loadDocuments();
+                break;
+            case 'reports':
+                Reports.loadDocuments();
                 break;
             case 'dashboard':
                 Admin.loadDashboard();

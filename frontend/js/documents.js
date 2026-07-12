@@ -18,10 +18,10 @@ const Documents = {
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length) this.uploadFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files.length) this.uploadFiles(e.dataTransfer.files);
         });
         fileInput.addEventListener('change', () => {
-            if (fileInput.files.length) this.uploadFile(fileInput.files[0]);
+            if (fileInput.files.length) this.uploadFiles(fileInput.files);
         });
 
         // Modal close
@@ -81,6 +81,12 @@ const Documents = {
                     <td>${statusBadge}</td>
                     <td>${date}</td>
                     <td>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-${doc.id}" ${doc.ativo !== false ? 'checked' : ''} onchange="Documents.toggleActive('${doc.id}')">
+                            <label for="toggle-${doc.id}"></label>
+                        </div>
+                    </td>
+                    <td>
                         <button class="btn btn-sm btn-outline" onclick="Documents.deleteDoc('${doc.id}')" title="Excluir"
                             style="color:var(--danger);border-color:var(--danger)">
                             <span class="material-icons-round" style="font-size:16px">delete</span>
@@ -118,32 +124,51 @@ const Documents = {
         document.getElementById('upload-modal').classList.add('hidden');
     },
 
-    async uploadFile(file) {
+    async uploadFiles(files) {
         const progressEl = document.getElementById('upload-progress');
         const progressFill = document.getElementById('progress-fill');
         const statusEl = document.getElementById('upload-status');
 
         progressEl.classList.remove('hidden');
-        progressFill.style.width = '30%';
-        statusEl.textContent = `Enviando ${file.name}...`;
+        
+        let successCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const percent = ((i) / files.length) * 100;
+            progressFill.style.width = `${percent}%`;
+            statusEl.textContent = `Enviando ${file.name} (${i + 1}/${files.length})...`;
 
+            try {
+                await API.upload('/api/documents/upload', file);
+                successCount++;
+            } catch (err) {
+                App.toast(`Erro em ${file.name}: ${err.message}`, 'error');
+            }
+        }
+
+        progressFill.style.width = '100%';
+        if (successCount === files.length) {
+            statusEl.textContent = 'Todos os uploads concluídos! Processando em background...';
+            App.toast('Documentos enviados com sucesso!', 'success');
+        } else {
+            statusEl.textContent = `Upload concluído com falhas (${successCount}/${files.length}).`;
+        }
+
+        setTimeout(() => {
+            this.hideUploadModal();
+            this.loadDocuments();
+        }, 1500);
+    },
+
+    async toggleActive(id) {
         try {
-            progressFill.style.width = '60%';
-            const result = await API.upload('/api/documents/upload', file);
-            progressFill.style.width = '100%';
-            statusEl.textContent = 'Upload concluído! Processando em background...';
-
-            App.toast('Documento enviado com sucesso!', 'success');
-
-            setTimeout(() => {
-                this.hideUploadModal();
-                this.loadDocuments();
-            }, 1500);
+            const res = await API.put(`/api/documents/${id}/toggle-active`);
+            App.toast(res.message, 'success');
+            // Recarrega silenciosamente para atualizar estado local se necessário
+            this.loadDocuments();
         } catch (err) {
-            statusEl.textContent = `Erro: ${err.message}`;
-            progressFill.style.width = '100%';
-            progressFill.style.background = 'var(--danger)';
             App.toast(err.message, 'error');
+            this.loadDocuments(); // Reverte checkbox visualmente
         }
     },
 
