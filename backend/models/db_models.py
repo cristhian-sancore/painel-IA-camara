@@ -178,6 +178,7 @@ DEFAULT_PERMISSIONS = [
     {"codename": "chat.history", "descricao": "Ver histórico de conversas", "categoria": "chat"},
     {"codename": "documents.view", "descricao": "Visualizar documentos indexados", "categoria": "documents"},
     {"codename": "documents.upload", "descricao": "Fazer upload de documentos", "categoria": "documents"},
+    {"codename": "documents.manage", "descricao": "Gerenciar status e ativos dos documentos", "categoria": "documents"},
     {"codename": "documents.delete", "descricao": "Remover documentos", "categoria": "documents"},
     {"codename": "users.view", "descricao": "Ver lista de usuários", "categoria": "users"},
     {"codename": "users.manage", "descricao": "Criar/editar/desativar usuários", "categoria": "users"},
@@ -193,7 +194,7 @@ ROLE_PERMISSIONS = {
     "superadmin": [p["codename"] for p in DEFAULT_PERMISSIONS],  # Tudo
     "admin": [
         "chat.use", "chat.history",
-        "documents.view", "documents.upload", "documents.delete",
+        "documents.view", "documents.upload", "documents.manage", "documents.delete",
         "users.view", "users.manage",
         "dashboard.view",
     ],
