@@ -1,0 +1,42 @@
+version: '3.8'
+
+networks:
+  ia-local_default:
+    external: true
+
+services:
+  painel-rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: painel-rag-camara:latest
+    container_name: painel_rag_camara
+    restart: always
+    networks:
+      - ia-local_default
+    environment:
+      - OLLAMA_URL=http://ollama_ia:11434
+      - QDRANT_URL=http://qdrant_vector_db_ia:6333
+      - DATABASE_URL=postgresql+asyncpg://admin:senha_segura_db@postgres_db_ia:5432/painel_rag
+      - REDIS_URL=redis://redis_cache_ia:6379
+      - SUPERADMIN_EMAIL=admin@camara.gov.br
+      - SUPERADMIN_PASSWORD=Admin@2024
+      - SUPERADMIN_NOME=Super Administrador
+      - JWT_SECRET=troque-por-uma-chave-segura-de-64-caracteres
+      - LLM_MODEL=llama3
+      - EMBEDDING_MODEL=nomic-embed-text
+      - QDRANT_COLLECTION=camara_documentos
+      - MAX_UPLOAD_SIZE_MB=50
+    ports:
+      - "8501:8000"
+    volumes:
+      - painel_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  painel_uploads:
