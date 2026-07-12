@@ -119,11 +119,19 @@ async def get_collection_info() -> dict:
         client = get_qdrant_client()
         info = client.get_collection(settings.qdrant_collection)
         return {
-            "status": "ok",
+            "status": "online",
             "points_count": info.points_count,
             "vectors_count": info.vectors_count,
         }
     except Exception as e:
+        # Se for erro de not found (coleção não existe), o serviço está online, mas vazio
+        if "Not found" in str(e) or "doesn't exist" in str(e):
+            return {
+                "status": "online",
+                "points_count": 0,
+                "vectors_count": 0,
+                "info": "Coleção aguardando o primeiro documento"
+            }
         return {"status": "error", "error": str(e)}
 
 
