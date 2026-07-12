@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema RAG - Consulta inteligente de documentos legislativos">
+    <title>Painel RAG - Câmara de Vereadores</title>
+    <link rel="icon" id="dynamic-favicon" href="/assets/default-logo.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- ============================================================ -->
+    <!-- LOADING SCREEN -->
+    <!-- ============================================================ -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+        </div>
+        <p class="loading-text">Carregando...</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- LOGIN PAGE -->
+    <!-- ============================================================ -->
+    <div id="page-login" class="page hidden">
+        <div class="login-container">
+            <div class="login-bg-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+            <div class="login-card glass-card">
+                <div class="login-header">
+                    <img id="login-logo" src="/assets/default-logo.svg" alt="Logo" class="login-logo">
+                    <h1 id="login-title" class="login-title">Painel RAG</h1>
+                    <p id="login-subtitle" class="login-subtitle">Câmara de Vereadores</p>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <span class="material-icons-round form-icon">email</span>
+                        <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <span class="material-icons-round form-icon">lock</span>
+                        <input type="password" id="login-password" placeholder="Senha" required autocomplete="current-password">
+                    </div>
+                    <div id="login-error" class="form-error hidden"></div>
+                    <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                        <span class="btn-text">Entrar</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MAIN APP (após login) -->
+    <!-- ============================================================ -->
+    <div id="page-app" class="page hidden">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <img id="sidebar-logo" src="/assets/default-logo.svg" alt="Logo" class="sidebar-logo">
+                <h2 id="sidebar-title" class="sidebar-title">Painel RAG</h2>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span class="material-icons-round">menu</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="chat" id="nav-chat">
+                    <span class="material-icons-round">smart_toy</span>
+                    <span class="nav-label">Chat IA</span>
+                </a>
+                <a href="#" class="nav-item" data-page="documents" id="nav-documents">
+                    <span class="material-icons-round">description</span>
+                    <span class="nav-label">Documentos</span>
+                </a>
+                <a href="#" class="nav-item" data-page="dashboard" id="nav-dashboard">
+                    <span class="material-icons-round">dashboard</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="users" id="nav-users">
+                    <span class="material-icons-round">people</span>
+                    <span class="nav-label">Usuários</span>
+                </a>
+                <a href="#" class="nav-item" data-page="groups" id="nav-groups">
+                    <span class="material-icons-round">admin_panel_settings</span>
+                    <span class="nav-label">Grupos</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings" id="nav-settings">
+                    <span class="material-icons-round">settings</span>
+                    <span class="nav-label">Configurações</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">SA</div>
+                    <div class="user-details">
+                        <span class="user-name" id="user-name">Admin</span>
+                        <span class="user-role" id="user-role">superadmin</span>
+                    </div>
+                </div>
+                <button id="btn-logout" class="btn-logout" title="Sair">
+                    <span class="material-icons-round">logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- ===== CHAT ===== -->
+            <section id="section-chat" class="content-section active">
+                <div class="chat-layout">
+                    <!-- Chat Sidebar (conversas) -->
+                    <div class="chat-sidebar" id="chat-sidebar">
+                        <div class="chat-sidebar-header">
+                            <h3>Conversas</h3>
+                            <button id="btn-new-chat" class="btn btn-sm btn-accent" title="Nova conversa">
+                                <span class="material-icons-round">add</span>
+                            </button>
+                        </div>
+                        <div id="conversations-list" class="conversations-list">
+                            <div class="empty-state">
+                                <span class="material-icons-round">forum</span>
+                                <p>Nenhuma conversa ainda</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Main -->
+                    <div class="chat-main">
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="chat-welcome">
+                                <span class="material-icons-round chat-welcome-icon">auto_awesome</span>
+                                <h2>Olá! Como posso ajudar?</h2>
+                                <p>Faça perguntas sobre os documentos legislativos da câmara.</p>
+                                <div class="chat-suggestions">
+                                    <button class="suggestion-chip" data-question="Quais são as leis municipais mais recentes?">
+                                        📜 Leis recentes
+                                    </button>
+                                    <button class="suggestion-chip" data-question="Qual a lei orgânica do município?">
+                                        📋 Lei Orgânica
+                                    </button>
+                                    <button class="suggestion-chip" data-question="Quais projetos de lei estão em tramitação?">
+                                        📄 Projetos em tramitação
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <div class="chat-input-wrapper">
+                                <textarea id="chat-input" placeholder="Faça uma pergunta sobre os documentos..." rows="1"></textarea>
+                                <button id="btn-send" class="btn-send" title="Enviar">
+                                    <span class="material-icons-round">send</span>
+                                </button>
+                            </div>
+                            <p class="chat-disclaimer">As respostas são baseadas nos documentos indexados e podem conter imprecisões.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== DOCUMENTS ===== -->
+            <section id="section-documents" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Documentos</h1>
+                        <p class="section-subtitle">Gerencie os documentos indexados no sistema</p>
+                    </div>
+                    <button id="btn-upload-doc" class="btn btn-primary">
+                        <span class="material-icons-round">upload_file</span>
+                        Upload
+                    </button>
+                </div>
+
+                <!-- Upload Modal -->
+                <div id="upload-modal" class="modal hidden">
+                    <div class="modal-overlay"></div>
+                    <div class="modal-content glass-card">
+                        <div class="modal-header">
+                            <h2>Upload de Documento</h2>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="drop-zone" class="drop-zone">
+                                <span class="material-icons-round drop-icon">cloud_upload</span>
+                                <p>Arraste um arquivo ou <strong>clique aqui</strong></p>
+                                <p class="drop-hint">PDF, DOCX ou TXT (máx. 50MB)</p>
+                                <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
+                            </div>
+                            <div id="upload-progress" class="upload-progress hidden">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progress-fill"></div>
+                                </div>
+                                <p id="upload-status">Enviando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="search-bar">
+                    <span class="material-icons-round">search</span>
+                    <input type="text" id="doc-search" placeholder="Buscar documentos...">
+                </div>
+
+                <!-- Documents Table -->
+                <div class="table-container glass-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Chunks</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documents-table-body">
+                            <tr class="empty-row">
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <span class="material-icons-round">folder_open</span>
+                                        <p>Nenhum documento indexado</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="documents-pagination" class="pagination"></div>
+            </section>
+
+            <!-- ===== DASHBOARD ===== -->
+            <section id="section-dashboard" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p class="section-subtitle">Visão geral do sistema</p>
+                    </div>
+                    <button id="btn-refresh-dashboard" class="btn btn-outline">
+                        <span class="material-icons-round">refresh</span>
+                        Atualizar
+                    </button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card glass-card" id="stat-docs">
+                        <div class="stat-icon" style="background: var(--gradient-primary)">
+                            <span class="material-icons-round">description</span>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-docs-value">0</span>
+                            <span class="stat-label">Documentos</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card" id="stat-chunks">
+                        <div class="stat-icon" style="background: var(--gradient-accent)">
+                            <span class="material-icons-round">data_array</span>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-chunks-value">0</span>
+                            <span class="stat-label">Chunks Indexados</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card" id="stat-users">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #00b894, #00cec9)">
+                            <span class="material-icons-round">people</span>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-users-value">0</span>
+                            <span class="stat-label">Usuários</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card" id="stat-messages">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #e17055, #d63031)">
+                            <span class="material-icons-round">chat</span>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-messages-value">0</span>
+                            <span class="stat-label">Mensagens</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Status -->
+                <div class="services-grid">
+                    <div class="service-card glass-card" id="service-ollama">
+                        <div class="service-status-dot offline"></div>
+                        <div class="service-info">
+                            <h3>Ollama (LLM)</h3>
+                            <span class="service-status-text">Verificando...</span>
+                        </div>
+                    </div>
+                    <div class="service-card glass-card" id="service-qdrant">
+                        <div class="service-status-dot offline"></div>
+                        <div class="service-info">
+                            <h3>Qdrant (Vetorial)</h3>
+                            <span class="service-status-text">Verificando...</span>
+                        </div>
+                    </div>
+                    <div class="service-card glass-card" id="service-postgresql">
+                        <div class="service-status-dot offline"></div>
+                        <div class="service-info">
+                            <h3>PostgreSQL</h3>
+                            <span class="service-status-text">Verificando...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== USERS ===== -->
+            <section id="section-users" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Usuários</h1>
+                        <p class="section-subtitle">Gerencie os usuários do sistema</p>
+                    </div>
+                    <button id="btn-new-user" class="btn btn-primary">
+                        <span class="material-icons-round">person_add</span>
+                        Novo Usuário
+                    </button>
+                </div>
+
+                <!-- User Modal -->
+                <div id="user-modal" class="modal hidden">
+                    <div class="modal-overlay"></div>
+                    <div class="modal-content glass-card">
+                        <div class="modal-header">
+                            <h2 id="user-modal-title">Novo Usuário</h2>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="user-form">
+                                <input type="hidden" id="user-edit-id">
+                                <div class="form-group">
+                                    <label for="user-nome">Nome</label>
+                                    <input type="text" id="user-nome" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="user-email">Email</label>
+                                    <input type="email" id="user-email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="user-senha">Senha</label>
+                                    <input type="password" id="user-senha" minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="user-role">Role</label>
+                                    <select id="user-role-select">
+                                        <option value="user">Usuário</option>
+                                        <option value="admin">Administrador</option>
+                                        <option value="superadmin">Super Admin</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Grupos</label>
+                                    <div id="user-groups-checkboxes" class="checkbox-group"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container glass-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ===== GROUPS ===== -->
+            <section id="section-groups" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Grupos & Permissões</h1>
+                        <p class="section-subtitle">Crie grupos com permissões personalizadas</p>
+                    </div>
+                    <button id="btn-new-group" class="btn btn-primary">
+                        <span class="material-icons-round">group_add</span>
+                        Novo Grupo
+                    </button>
+                </div>
+
+                <!-- Group Modal -->
+                <div id="group-modal" class="modal hidden">
+                    <div class="modal-overlay"></div>
+                    <div class="modal-content glass-card modal-lg">
+                        <div class="modal-header">
+                            <h2 id="group-modal-title">Novo Grupo</h2>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="group-form">
+                                <input type="hidden" id="group-edit-id">
+                                <div class="form-group">
+                                    <label for="group-nome">Nome do Grupo</label>
+                                    <input type="text" id="group-nome" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="group-descricao">Descrição</label>
+                                    <textarea id="group-descricao" rows="2"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Permissões</label>
+                                    <div id="permissions-grid" class="permissions-grid"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="groups-container" class="groups-grid"></div>
+            </section>
+
+            <!-- ===== SETTINGS ===== -->
+            <section id="section-settings" class="content-section hidden">
+                <div class="section-header">
+                    <div>
+                        <h1>Configurações</h1>
+                        <p class="section-subtitle">Personalize o sistema</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Identidade -->
+                    <div class="settings-card glass-card">
+                        <div class="settings-card-header">
+                            <span class="material-icons-round">badge</span>
+                            <h3>Identidade</h3>
+                        </div>
+                        <form id="settings-identity-form">
+                            <div class="form-group">
+                                <label for="cfg-nome-camara">Nome da Câmara</label>
+                                <input type="text" id="cfg-nome-camara" placeholder="Câmara Municipal de...">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cfg-cidade">Cidade</label>
+                                    <input type="text" id="cfg-cidade">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfg-estado">Estado</label>
+                                    <input type="text" id="cfg-estado" maxlength="2" placeholder="SP">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar Identidade</button>
+                        </form>
+                    </div>
+
+                    <!-- Aparência -->
+                    <div class="settings-card glass-card">
+                        <div class="settings-card-header">
+                            <span class="material-icons-round">palette</span>
+                            <h3>Aparência</h3>
+                        </div>
+                        <form id="settings-appearance-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cfg-cor-primaria">Cor Primária</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="cfg-cor-primaria" value="#1a237e">
+                                        <span class="color-value">#1a237e</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfg-cor-secundaria">Cor Secundária</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="cfg-cor-secundaria" value="#c9a84c">
+                                        <span class="color-value">#c9a84c</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cfg-cor-fundo">Cor de Fundo</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="cfg-cor-fundo" value="#0f0f1a">
+                                        <span class="color-value">#0f0f1a</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfg-cor-texto">Cor do Texto</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="cfg-cor-texto" value="#e0e0e0">
+                                        <span class="color-value">#e0e0e0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar Cores</button>
+                        </form>
+
+                        <div class="settings-upload-section">
+                            <div class="form-group">
+                                <label>Logo</label>
+                                <div class="file-upload-inline">
+                                    <img id="preview-logo" src="/assets/default-logo.svg" alt="Logo" class="preview-thumb">
+                                    <button type="button" id="btn-upload-logo" class="btn btn-outline btn-sm">Alterar Logo</button>
+                                    <input type="file" id="input-logo" accept="image/*" hidden>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Favicon</label>
+                                <div class="file-upload-inline">
+                                    <img id="preview-favicon" src="/assets/default-logo.svg" alt="Favicon" class="preview-thumb preview-favicon">
+                                    <button type="button" id="btn-upload-favicon" class="btn btn-outline btn-sm">Alterar Favicon</button>
+                                    <input type="file" id="input-favicon" accept="image/*,.ico" hidden>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM -->
+                    <div class="settings-card glass-card">
+                        <div class="settings-card-header">
+                            <span class="material-icons-round">psychology</span>
+                            <h3>Modelo de IA</h3>
+                        </div>
+                        <form id="settings-llm-form">
+                            <div class="form-group">
+                                <label for="cfg-modelo-llm">Modelo</label>
+                                <select id="cfg-modelo-llm">
+                                    <option value="llama3">llama3</option>
+                                </select>
+                                <button type="button" id="btn-refresh-models" class="btn btn-sm btn-outline" style="margin-top:0.5rem">
+                                    <span class="material-icons-round" style="font-size:16px">refresh</span> Atualizar modelos
+                                </button>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cfg-temperatura">Temperatura</label>
+                                    <input type="range" id="cfg-temperatura" min="0" max="1" step="0.1" value="0.3">
+                                    <span class="range-value" id="temperatura-value">0.3</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfg-max-tokens">Max Tokens</label>
+                                    <input type="number" id="cfg-max-tokens" value="2048" min="256" max="8192">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-system-prompt">System Prompt</label>
+                                <textarea id="cfg-system-prompt" rows="4" placeholder="Instruções para o modelo de IA..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar Config IA</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/documents.js"></script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/users.js"></script>
+    <script src="/js/groups.js"></script>
+    <script src="/js/settings.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

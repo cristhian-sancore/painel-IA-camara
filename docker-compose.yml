@@ -1,0 +1,26 @@
+networks:
+  ia-local_default:
+    external: true
+
+services:
+  painel-rag:
+    build: .
+    container_name: painel_rag_camara
+    restart: always
+    networks:
+      - ia-local_default
+    env_file:
+      - .env
+    ports:
+      - "8501:8000"
+    volumes:
+      - painel_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  painel_uploads:
