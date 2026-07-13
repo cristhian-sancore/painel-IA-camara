@@ -1684,3 +1684,53 @@ input[type="range"]::-webkit-slider-thumb {
     height: 100%;
     border: none;
 }
+
+/* Print Rules for Reports */
+@media print {
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0;
+        padding: 0;
+    }
+    .sidebar,
+    .top-header,
+    .report-config,
+    .btn,
+    nav,
+    .toast-container {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    #report-result-container {
+        border: none !important;
+        background: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #report-result-content {
+        color: #000 !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #000 !important;
+        page-break-after: avoid;
+    }
+    p, li, td {
+        color: #000 !important;
+    }
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+    th, td {
+        border: 1px solid #ccc !important;
+    }
+    /* Hide the title bar of the result container in print mode since it has the print button */
+    #report-result-container > div:first-child {
+        display: none !important;
+    }
+}
