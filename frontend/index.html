@@ -173,14 +173,13 @@
                         </div>
 
                         <!-- PDF Panel -->
-                        <div class="chat-pdf-panel" id="chat-pdf-panel">
+                        <div class="chat-pdf-panel" id="chat-pdf-panel" style="position: relative;">
+                            <!-- Botão de Fechar Absoluto e Flutuante (Anti-Cache/Anti-PDFjs) -->
+                            <button onclick="Chat.closePdfViewer()" class="btn btn-sm btn-danger" style="position: absolute; top: -10px; left: -10px; z-index: 999999; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; padding: 0;">
+                                <span class="material-icons-round" style="font-size: 18px;">close</span>
+                            </button>
+                            
                             <div class="pdf-viewer-container" style="display:flex; flex-direction:column; height: 100%;">
-                                <div class="pdf-header" style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 1rem; background: var(--card-bg); border-bottom: 1px solid var(--border);">
-                                    <h3 id="pdf-viewer-title" style="margin:0; font-size: 14px; font-weight: 500;">Visualizador de Documento</h3>
-                                    <button class="btn btn-sm btn-outline" onclick="Chat.closePdfViewer()" style="padding: 0.2rem 0.5rem;">
-                                        <span class="material-icons-round" style="font-size: 16px;">close</span>
-                                    </button>
-                                </div>
                                 <iframe id="pdf-viewer-iframe" src="" style="flex:1; width:100%; border:none;"></iframe>
                             </div>
                         </div>
