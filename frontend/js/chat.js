@@ -176,6 +176,15 @@ const Chat = {
                                 fullResponse += data.data;
                                 contentEl.textContent = fullResponse;
                                 this.scrollToBottom();
+                            } else if (data.type === 'error') {
+                                if (!bubbleEl) {
+                                    this.hideTyping();
+                                    bubbleEl = this.appendMessage('assistant', '', null, true);
+                                    contentEl = bubbleEl.querySelector('.message-text');
+                                }
+                                fullResponse += `\n\n⚠️ **[Erro: ${data.data}]**`;
+                                contentEl.innerHTML = marked.parse(fullResponse);
+                                this.scrollToBottom();
                             } else if (data.type === 'sources') {
                                 sources = data.data;
                             } else if (data.type === 'conversation_id') {

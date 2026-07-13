@@ -138,30 +138,40 @@ async def chat_stream(
         # Enviar conversation_id
         yield f"data: {json.dumps({'type': 'conversation_id', 'data': conversation.id})}\n\n"
 
-        # Stream de tokens com keep-alive
+        # Stream de tokens com keep-alive robusto
         import asyncio
         iterator = response_generator().__aiter__()
-        while True:
-            try:
-                # Aguarda até 10s pelo próximo token
-                token = await asyncio.wait_for(iterator.__anext__(), timeout=10.0)
-                full_response += token
-                yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
-            except asyncio.TimeoutError:
-                # Envia um comentário SSE para manter a conexão ativa (Cloudflare/Nginx não corta)
-                yield ": keepalive\n\n"
-            except StopAsyncIteration:
-                break
+        
+        try:
+            while True:
+                task = asyncio.create_task(iterator.__anext__())
+                
+                # Aguarda a conclusão da task, disparando keepalive a cada 10s
+                while not task.done():
+                    done, pending = await asyncio.wait([task], timeout=10.0)
+                    if task in pending:
+                        yield ": keepalive\n\n"
+                
+                try:
+                    token = task.result()
+                    full_response += token
+                    yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+                except StopAsyncIteration:
+                    break
+        except Exception as e:
+            logger.error(f"Erro durante stream da IA: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'data': 'Conexão com a IA foi interrompida inesperadamente.'})}\n\n"
 
         # Salvar resposta completa no DB
-        async with db.begin():
-            assistant_msg = Message(
-                conversation_id=conversation.id,
-                role="assistant",
-                conteudo=full_response,
-                fontes_json=sources,
-            )
-            db.add(assistant_msg)
+        if full_response.strip():
+            async with db.begin():
+                assistant_msg = Message(
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    conteudo=full_response,
+                    fontes_json=sources,
+                )
+                db.add(assistant_msg)
 
         yield f"data: {json.dumps({'type': 'done', 'data': ''})}\n\n"
 
