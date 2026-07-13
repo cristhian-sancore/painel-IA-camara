@@ -138,10 +138,20 @@ async def chat_stream(
         # Enviar conversation_id
         yield f"data: {json.dumps({'type': 'conversation_id', 'data': conversation.id})}\n\n"
 
-        # Stream de tokens
-        async for token in response_generator():
-            full_response += token
-            yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+        # Stream de tokens com keep-alive
+        import asyncio
+        iterator = response_generator().__aiter__()
+        while True:
+            try:
+                # Aguarda até 10s pelo próximo token
+                token = await asyncio.wait_for(iterator.__anext__(), timeout=10.0)
+                full_response += token
+                yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+            except asyncio.TimeoutError:
+                # Envia um comentário SSE para manter a conexão ativa (Cloudflare/Nginx não corta)
+                yield ": keepalive\n\n"
+            except StopAsyncIteration:
+                break
 
         # Salvar resposta completa no DB
         async with db.begin():
