@@ -1,6 +1,9 @@
 import logging
+import json
+import asyncio
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -83,14 +86,42 @@ Elabore um relatório sumarizado do documento.
 Seja estruturado, usando Markdown, tópicos e formatação clara. Não invente informações que não estão no texto.
 """
 
-    response_text = await llm_service.generate_response(
-        prompt=prompt,
-        model=model,
-        temperature=0.3,
-        max_tokens=2048,
+    async def response_generator():
+        iterator = llm_service.generate_response_stream(
+            prompt=prompt,
+            model=model,
+            temperature=0.3,
+            max_tokens=2048,
+        ).__aiter__()
+        
+        try:
+            while True:
+                task = asyncio.create_task(iterator.__anext__())
+                while not task.done():
+                    done, pending = await asyncio.wait([task], timeout=10.0)
+                    if task in pending:
+                        yield ": keepalive\n\n"
+                
+                try:
+                    token = task.result()
+                    yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+                except StopAsyncIteration:
+                    break
+        except Exception as e:
+            logger.error(f"Erro durante stream de relatorio: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'data': 'Conexão com a IA foi interrompida inesperadamente.'})}\n\n"
+            
+        yield f"data: {json.dumps({'type': 'done', 'data': ''})}\n\n"
+
+    return StreamingResponse(
+        response_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
-    
-    return {"report": response_text}
 
 
 @router.post("/cross-analysis")
@@ -155,11 +186,39 @@ Formate a resposta em Markdown, utilizando tabelas ou bullet points quando for c
 Não mencione limitações de IA, entregue a análise diretamente.
 """
 
-    response_text = await llm_service.generate_response(
-        prompt=prompt,
-        model=model,
-        temperature=0.3,
-        max_tokens=3000,
+    async def response_generator():
+        iterator = llm_service.generate_response_stream(
+            prompt=prompt,
+            model=model,
+            temperature=0.3,
+            max_tokens=3000,
+        ).__aiter__()
+        
+        try:
+            while True:
+                task = asyncio.create_task(iterator.__anext__())
+                while not task.done():
+                    done, pending = await asyncio.wait([task], timeout=10.0)
+                    if task in pending:
+                        yield ": keepalive\n\n"
+                
+                try:
+                    token = task.result()
+                    yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+                except StopAsyncIteration:
+                    break
+        except Exception as e:
+            logger.error(f"Erro durante stream de relatorio: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'data': 'Conexão com a IA foi interrompida inesperadamente.'})}\n\n"
+            
+        yield f"data: {json.dumps({'type': 'done', 'data': ''})}\n\n"
+
+    return StreamingResponse(
+        response_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
-    
-    return {"report": response_text}

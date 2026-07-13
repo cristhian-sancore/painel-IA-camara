@@ -39,12 +39,18 @@ const Reports = {
         document.getElementById('report-result-container').classList.remove('hidden');
 
         try {
-            const data = await API.post('/api/reports/summarize', {
-                document_id: docId,
-                focus: focus
+            const response = await fetch('/api/reports/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API.getToken()}`
+                },
+                body: JSON.stringify({ document_id: docId, focus: focus })
             });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            await this.processStream(response);
             
-            this.renderResult(data.report);
         } catch (err) {
             document.getElementById('report-result-content').innerHTML = `<p class="text-danger">Erro: ${err.message}</p>`;
             App.toast('Erro ao gerar relatório', 'error');
@@ -67,12 +73,18 @@ const Reports = {
         document.getElementById('report-result-container').classList.remove('hidden');
 
         try {
-            const data = await API.post('/api/reports/cross-analysis', {
-                document_ids: selectedOptions,
-                topic: topic
+            const response = await fetch('/api/reports/cross-analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API.getToken()}`
+                },
+                body: JSON.stringify({ document_ids: selectedOptions, topic: topic })
             });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            await this.processStream(response);
             
-            this.renderResult(data.report);
         } catch (err) {
             document.getElementById('report-result-content').innerHTML = `<p class="text-danger">Erro: ${err.message}</p>`;
             App.toast('Erro ao gerar análise cruzada', 'error');
@@ -81,15 +93,53 @@ const Reports = {
         }
     },
     
+    async processStream(response) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullMarkdown = '';
+        let buffer = '';
+        
+        document.getElementById('report-result-content').innerHTML = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop();
+            
+            for (const part of parts) {
+                if (part.startsWith('data: ')) {
+                    const jsonStr = part.substring(6);
+                    try {
+                        const data = JSON.parse(jsonStr);
+                        if (data.type === 'token') {
+                            fullMarkdown += data.data;
+                            this.renderResult(fullMarkdown);
+                        } else if (data.type === 'error') {
+                            fullMarkdown += `\n\n⚠️ **[Erro: ${data.data}]**`;
+                            this.renderResult(fullMarkdown);
+                        }
+                    } catch(e) {
+                        console.error('SSE JSON parse error:', e);
+                    }
+                }
+            }
+        }
+    },
+    
     renderResult(markdown) {
-        // Usa marked (que precisamos adicionar no index.html) ou escape básico
-        // Como não temos a lib marked.js no momento, faremos um parser simplificado ou adicionamos script
         let html = markdown;
-        // fallback markdown muito simples:
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/## (.*)/g, '<h2>$1</h2>');
         html = html.replace(/# (.*)/g, '<h1>$1</h1>');
         html = html.replace(/\n\n/g, '<br><br>');
+        
+        // Add marked support if available
+        if (typeof marked !== 'undefined') {
+            html = marked.parse(markdown);
+        }
         
         document.getElementById('report-result-content').innerHTML = html;
     },
