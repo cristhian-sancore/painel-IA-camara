@@ -68,6 +68,7 @@ const Chat = {
     },
 
     async loadConversation(conversationId) {
+        this.closePdfViewer();
         this.currentConversationId = conversationId;
         try {
             const data = await API.get(`/api/chat/conversations/${conversationId}`);
@@ -92,6 +93,7 @@ const Chat = {
 
     newConversation() {
         this.currentConversationId = null;
+        this.closePdfViewer();
         this.showWelcome();
     },
 
@@ -286,7 +288,17 @@ const Chat = {
         const panel = document.getElementById('chat-pdf-panel');
         const iframe = document.getElementById('pdf-viewer-iframe');
         panel.classList.add('active');
-        iframe.src = `/api/documents/${docId}/file#page=${page}`;
+        
+        // Forçar o iframe a recarregar para a nova página (evita cache de hash do navegador)
+        const url = `/api/documents/${docId}/file#page=${page}`;
+        if (iframe.src.endsWith(url)) {
+            // Mesmo arquivo e página, não faz nada
+            return;
+        }
+        iframe.src = 'about:blank';
+        setTimeout(() => {
+            iframe.src = url;
+        }, 50);
     },
 
     closePdfViewer() {
