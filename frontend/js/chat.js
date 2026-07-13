@@ -147,12 +147,8 @@ const Chat = {
                 throw new Error('Erro ao enviar mensagem');
             }
 
-            this.hideTyping();
-
-            // Criar bubble do assistente
-            const bubbleEl = this.appendMessage('assistant', '', null, true);
-            const contentEl = bubbleEl.querySelector('.message-text');
-
+            let bubbleEl = null;
+            let contentEl = null;
             let fullResponse = '';
             let sources = [];
 
@@ -172,6 +168,11 @@ const Chat = {
                             const data = JSON.parse(line.slice(6));
 
                             if (data.type === 'token') {
+                                if (!bubbleEl) {
+                                    this.hideTyping();
+                                    bubbleEl = this.appendMessage('assistant', '', null, true);
+                                    contentEl = bubbleEl.querySelector('.message-text');
+                                }
                                 fullResponse += data.data;
                                 contentEl.textContent = fullResponse;
                                 this.scrollToBottom();
@@ -180,6 +181,11 @@ const Chat = {
                             } else if (data.type === 'conversation_id') {
                                 this.currentConversationId = data.data;
                             } else if (data.type === 'done') {
+                                if (!bubbleEl) {
+                                    this.hideTyping();
+                                    bubbleEl = this.appendMessage('assistant', '', null, true);
+                                    contentEl = bubbleEl.querySelector('.message-text');
+                                }
                                 // Adicionar fontes
                                 if (sources.length) {
                                     const sourcesHTML = this.createSourcesHTML(sources);
