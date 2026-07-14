@@ -1695,7 +1695,8 @@ input[type="range"]::-webkit-slider-thumb {
     }
     .sidebar,
     .top-header,
-    .report-config,
+    .section-header,
+    .reports-grid,
     .btn,
     nav,
     .toast-container {
